@@ -2192,7 +2192,12 @@ function checkProgress() {
   if (G.phase === 'toSafe' && p.x > P.safe.fx + 12 && p.x < P.safe.fx2 - 12 && p.y < L.TOP + P.safe.fy - 6) startHold();
   if (G.phase === 'hold') { if (--G.holdT <= 0) openSafe(); else if (G.holdT % 600 === 0) addText(Math.round(G.holdT / 60) + ' SECONDS', p.x, p.y + 80, '#ffcc33', 20, 60); }
   updateSafeTalk();
-  if (G.phase === 'enter') { G.doorOpen = Math.min(1, G.doorOpen + 0.02); if (Math.abs(p.x - P.safe.door) < 30 && p.y < L.TOP + 40) levelComplete(); }
+  if (G.phase === 'enter') {
+    G.doorOpen = Math.min(1, G.doorOpen + 0.02);
+    // Give players five gameplay seconds to enter voluntarily; then finish normally.
+    if (Math.abs(p.x - P.safe.door) < 30 && p.y < L.TOP + 40) { levelComplete(); return; }
+    if (--G.enterGraceT <= 0) { levelComplete(); return; }
+  }
 }
 function startLockdown() {
   const RB = G.gates[G.gate]; G.phase = 'lockdown'; G.lockKills = 0; G.minX = RB - 1000; G.camL = RB - 1000;
@@ -2238,7 +2243,7 @@ function startHold() {
 }
 function openSafe() {
   G.slowmo = 50; G.focus = player ? { x: player.x, y: player.y } : null;
-  G.phase = 'enter'; Music.boss = false; banner('GET INSIDE!', 'The door is open'); SFX.heal(); vibrate([40, 40, 40]);
+  G.phase = 'enter'; G.enterGraceT = 5 * 60; Music.boss = false; banner('GET INSIDE!', '5 seconds before automatic entry'); SFX.heal(); vibrate([40, 40, 40]);
   for (const z of enemies) if (!z.dead && dist(z, player) < 260) { z.stun = 120; }
 }
 function hintMsg(t) { const h = $('hint'); h.textContent = t; h.classList.remove('hidden'); h.style.opacity = 1; G.hintT = 330; }
